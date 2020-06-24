@@ -1,4 +1,5 @@
 from django.db import models
+from jsonfield import JSONField
 
 
 class Room(models.Model):
@@ -22,3 +23,28 @@ class Room(models.Model):
         messages as they are generated.
         """
         return "room-%s" % self.id
+
+
+
+class Exchanges(models.Model):
+    """
+    Defines the exchanges to be used
+    """
+
+    # Room title
+    exchange_name = models.CharField(max_length=255)
+
+    price_endpoint = models.CharField(max_length=1000, blank=True)
+    is_all_coins = models.BooleanField(default=True)
+    has_usdt = models.BooleanField(default=True)
+    price_datatype = JSONField(null=True)
+
+    symbol_format = models.CharField(max_length=360, default="{symbol}")
+    bookTicker_endpoint = models.CharField(max_length=1000, blank=True)
+
+    symbols_endpoint = models.CharField(max_length=1000, blank=True)
+
+    exchange_img_url = models.CharField(max_length=1000, blank=True)
+
+    def __str__(self):
+        return self.exchange_name

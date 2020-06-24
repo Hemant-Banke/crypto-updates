@@ -1,9 +1,12 @@
 from django.conf import settings
-
+import asyncio
 from channels.generic.websocket import AsyncJsonWebsocketConsumer
 
 from .exceptions import ClientError
 from .utils import get_room_or_error
+from .views import req_data
+
+import json
 
 
 class ChatConsumer(AsyncJsonWebsocketConsumer):
@@ -22,17 +25,10 @@ class ChatConsumer(AsyncJsonWebsocketConsumer):
         """
         Called when the websocket is handshaking as part of initial connection.
         """
-        # Are they logged in?
-        # if self.scope["user"].is_anonymous:
-        #     # Reject the connection
-        #     await self.close()
-        # else:
-        #     # Accept the connection
-        #     await self.accept()
-
         await self.accept()
         # Store which rooms the user has joined on this connection
         self.rooms = set()
+
 
     async def receive_json(self, content):
         """
@@ -50,9 +46,12 @@ class ChatConsumer(AsyncJsonWebsocketConsumer):
                 await self.leave_room(content["room"])
             elif command == "send":
                 await self.send_room(content["room"], content["message"])
+            elif command == "receive_data":
+                await self.receive_data(content["room"])
         except ClientError as e:
             # Catch any errors and send it back
             await self.send_json({"error": e.code})
+
 
     async def disconnect(self, code):
         """
@@ -65,8 +64,8 @@ class ChatConsumer(AsyncJsonWebsocketConsumer):
             except ClientError:
                 pass
 
-    ##### Command helper methods called by receive_json
 
+    ##### Command helper methods called by receive_json
     async def join_room(self, room_id):
         """
         Called by receive_json when someone sent a join command.
@@ -143,6 +142,46 @@ class ChatConsumer(AsyncJsonWebsocketConsumer):
             }
         )
 
+
+    curr_data = {}
+    async def receive_data(self, room_id):
+        """
+        Called by receive_json when someone sends a message to a room.
+        """
+        # Check they are in this room
+        if room_id not in self.rooms:
+            raise ClientError("ROOM_ACCESS_DENIED")
+        # Get the room and send to the group about it
+        room = await get_room_or_error(room_id)
+
+        # Response with the data
+        while 1:
+            await asyncio.sleep(5)
+
+            # Get Data
+            data = await req_data()
+            data = json.loads(data)
+
+            # Find new symbols
+            if (self.curr_data):
+                for symbol in data:
+                    data[symbol]['is_new'] = not (symbol in self.curr_data)
+
+            new_len = len(data)
+            old_len = len(self.curr_data)
+
+            self.curr_data = data
+
+            await self.send_json(
+                {
+                    "msg_type": settings.MSG_TYPE_MESSAGE,
+                    "room": room_id,
+                    "data": data,
+                    "new_len": new_len,
+                    "old_len": old_len,
+                },
+            )
+
     ##### Handlers for messages sent over the channel layer
 
     # These helper methods are named by the types we send - so chat.join becomes chat_join
@@ -181,7 +220,7 @@ class ChatConsumer(AsyncJsonWebsocketConsumer):
             {
                 "msg_type": settings.MSG_TYPE_MESSAGE,
                 "room": event["room_id"],
-                "username": 'Anonymous',
+                "username": event["username"],
                 "message": event["message"],
             },
         )

@@ -1,12 +1,13 @@
 from django.urls import path
 from django.contrib import admin
 from django.contrib.auth import login, logout
-from chat.views import index
+from chat.views import index, exchange_list
 
 
 urlpatterns = [
     path('', index),
-    path('accounts/login/', login),
-    path('accounts/logout/', logout),
+    path('exchanges/', exchange_list),
+    # path('accounts/login/', login),
+    # path('accounts/logout/', logout),
     path('admin/', admin.site.urls),
 ]

@@ -1,0 +1,68 @@
+{% extends "base.html" %}
+
+{% block title %}All Exhanges{% endblock %}
+{% block header_text %}All Exchanges{% endblock %}
+
+{% block content %}
+
+
+    <div class="container">
+        <div class="card shadow-sm">
+            <div class="card-body">
+                <h4>All Exchange names in Coingecko</h4>
+
+                <div id="exchange-list">
+                    <div class="d-flex justify-content-center align-items-center my-4">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="sr-only">Loading...</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+{% endblock %}
+
+
+{% block extra_body %}
+    <style>
+        .dataTables_wrapper .row{
+            width: 100%;
+        }
+    </style>
+
+
+    <script>
+        $(function () {
+
+            function status(response) {
+                if (response.status >= 200 && response.status < 300) {
+                    return Promise.resolve(response)
+                }
+                else {
+                    return Promise.reject(new Error(response.statusText))
+                }
+            }
+
+            function json(response) {
+                return response.json()
+            }
+
+            fetch('https://api.coingecko.com/api/v3/exchanges/list')
+            .then(status)
+            .then(json)
+            .then(function(data) {
+                var names = '';
+                data.forEach(element => {
+                    names += element.id+'<br>';
+                });
+
+                document.getElementById('exchange-list').innerHTML = names;
+            }).catch(function(error) {
+                console.log('Request failed', error);
+            });
+
+        });
+    </script>
+{% endblock %}
