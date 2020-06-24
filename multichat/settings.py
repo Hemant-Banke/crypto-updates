@@ -73,12 +73,9 @@ MESSAGE_TYPES_LIST = [
 SECRET_KEY = 'imasecret'
 DEBUG = True
 ALLOWED_HOSTS = [
-    'multichat-dev.ap-south-1.elasticbeanstalk.com',
-    '172.31.6.108',
-    '172.31.47.40',
     '127.0.0.1',
     'localhost',
-    'multichatchannels.herokuapp.com',
+    'crypto-updates.herokuapp.com',
 ]
 
 # Application definition
